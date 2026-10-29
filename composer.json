@@ -1,0 +1,12 @@
+{
+    "name": "example/laravel-cache-deadlock",
+    "description": "Reproduces a MySQL deadlock in Laravel's DatabaseStore::add() under concurrent RateLimiter hits",
+    "type": "project",
+    "require": {
+        "php": "^8.3",
+        "ext-pcntl": "*",
+        "ext-pdo_mysql": "*",
+        "illuminate/cache": "^13.0",
+        "illuminate/database": "^13.0"
+    }
+}

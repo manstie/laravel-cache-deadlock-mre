@@ -59,3 +59,32 @@ Observed with `illuminate/cache` v13.39.0, 300 rounds each, against MySQL 8.4.13
 
 The rate depends heavily on how many requests land in the same few milliseconds, so it may take more workers or
 rounds to appear on a faster machine.
+
+## Patch
+
+[`patches/illuminate-cache-database-store-add-deadlock.patch`](patches/illuminate-cache-database-store-add-deadlock.patch)
+is applied to `illuminate/cache` on `composer install` by
+[cweagans/composer-patches](https://github.com/cweagans/composer-patches). On MySQL and MariaDB it changes
+`DatabaseStore::add()` from `INSERT IGNORE` to `INSERT ... ON DUPLICATE KEY UPDATE` with a no-op update:
+
+- `ON DUPLICATE KEY UPDATE` takes an exclusive (X) lock in the duplicate check instead of a shared (S) one, so
+  concurrent adds queue behind each other rather than all holding S and then needing X. The no-op update
+  leaves an existing row unchanged and reports 0 affected rows, so `add()` still returns `false` for it.
+- If InnoDB purges the deleted row while it is locked, the lock passes to the gap before the next key, and two
+  inserts into that gap can still deadlock on rare occasions. The statement is atomic, so it runs in
+  `$connection->transaction(..., 3)`, which retries on deadlock. This can't retry when `add()` is called inside
+  an outer transaction, because MySQL rolls back the whole transaction on deadlock.
+
+With the patch, `illuminate/cache` v13.39.0, 300 rounds, MySQL 8.4:
+
+| workers | `expired` deadlocks | `missing` deadlocks |
+| ------: | ------------------: | ------------------: |
+|      16 |           0 / 4,800 |           0 / 4,800 |
+|      32 |           0 / 9,600 |                   — |
+
+Upsert without the retry left 14 / 4,800 deadlocks at 16 workers. Retry without the upsert left 2 / 9,600 at
+32 workers.
+
+To see the unpatched behaviour, remove the `extra.patches` entry and run
+`docker compose run --rm php composer patches-relock && docker compose run --rm php composer patches-repatch`.
+`lock-sequence.php` uses raw SQL and deadlocks either way.

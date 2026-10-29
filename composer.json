@@ -7,6 +7,19 @@
         "ext-pcntl": "*",
         "ext-pdo_mysql": "*",
         "illuminate/cache": "^13.0",
-        "illuminate/database": "^13.0"
+        "illuminate/database": "^13.0",
+        "cweagans/composer-patches": "^2.0"
+    },
+    "extra": {
+        "patches": {
+            "illuminate/cache": {
+                "Avoid deadlocks in DatabaseStore::add() on MySQL": "patches/illuminate-cache-database-store-add-deadlock.patch"
+            }
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "cweagans/composer-patches": true
+        }
     }
 }

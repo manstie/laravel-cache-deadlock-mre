@@ -1,0 +1,17 @@
+{
+    "_hash": "61cc3b2f490e4a58d3a516c5fdcb2e4b49af9a3daa78292a22cc1c10822fd6c0",
+    "patches": {
+        "illuminate/cache": [
+            {
+                "package": "illuminate/cache",
+                "description": "Avoid deadlocks in DatabaseStore::add() on MySQL",
+                "url": "patches/illuminate-cache-database-store-add-deadlock.patch",
+                "sha256": "9f32687fe25d6de4218fa6149655110538558936f06cdeac4134d092b94314a3",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            }
+        ]
+    }
+}
